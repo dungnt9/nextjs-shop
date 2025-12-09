@@ -1,5 +1,11 @@
 import axios from "axios";
-import type { Order, CreateOrderRequest, UpdateOrderRequest } from "@/types";
+import type {
+  Order,
+  CreateOrderRequest,
+  UpdateOrderRequest,
+  UpdateOrderStatusRequest,
+  OrderStatus,
+} from "@/types";
 
 const API_URL =
   process.env.NEXT_PUBLIC_ORDER_API_URL || "http://localhost:6002/api/orders";
@@ -54,6 +60,15 @@ export const orderService = {
       quantity: Number(data.quantity),
     };
     const response = await apiClient.put<Order>(`/${id}`, payload);
+    return response.data;
+  },
+
+  /**
+   * Update order status only
+   */
+  updateStatus: async (id: number, status: OrderStatus): Promise<Order> => {
+    const payload: UpdateOrderStatusRequest = { status };
+    const response = await apiClient.patch<Order>(`/${id}/status`, payload);
     return response.data;
   },
 

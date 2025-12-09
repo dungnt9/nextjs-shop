@@ -44,6 +44,7 @@ export const productService = {
       price: Number(data.price),
       description: data.description || "",
       stock: Number(data.stock),
+      categoryId: data.categoryId || null,
     };
     const response = await apiClient.post<Product>("", payload);
     return response.data;
@@ -59,6 +60,8 @@ export const productService = {
       price: Number(data.price),
       description: data.description || "",
       stock: Number(data.stock),
+      categoryId: data.categoryId || null,
+      isActive: data.isActive,
     };
     const response = await apiClient.put<Product>(`/${id}`, payload);
     return response.data;

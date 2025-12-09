@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Modal, Form, Input, InputNumber, message } from "antd";
+import { Modal, Form, Input, InputNumber, Select, Switch, message } from "antd";
 import { productService } from "@/services/productService";
-import type { Product, ProductFormValues } from "@/types";
+import type { Product, ProductFormValues, Category } from "@/types";
 
 interface ProductModalProps {
   visible: boolean;
   onCancel: () => void;
   onSuccess: () => void;
   product: Product | null;
+  categories: Category[];
 }
 
 export default function ProductModal({
@@ -17,6 +18,7 @@ export default function ProductModal({
   onCancel,
   onSuccess,
   product,
+  categories,
 }: ProductModalProps) {
   const [form] = Form.useForm<ProductFormValues>();
   const isEdit = !!product;
@@ -30,9 +32,12 @@ export default function ProductModal({
           price: product.price,
           description: product.description,
           stock: product.stock,
+          categoryId: product.categoryId || undefined,
+          isActive: product.isActive,
         });
       } else {
         form.resetFields();
+        form.setFieldsValue({ isActive: true });
       }
     }
   }, [visible, product, form, isEdit]);
@@ -42,7 +47,10 @@ export default function ProductModal({
       const values = await form.validateFields();
 
       if (isEdit && product) {
-        await productService.update(product.id, values);
+        await productService.update(product.id, {
+          ...values,
+          isActive: values.isActive ?? true,
+        });
         message.success("Product updated successfully");
       } else {
         await productService.create(values);
@@ -64,6 +72,7 @@ export default function ProductModal({
       onOk={handleSubmit}
       okText={isEdit ? "Update" : "Create"}
       destroyOnClose
+      width={600}
     >
       <Form form={form} layout="vertical" requiredMark={false}>
         <Form.Item
@@ -82,35 +91,61 @@ export default function ProductModal({
           <Input placeholder="Enter brand" />
         </Form.Item>
 
-        <Form.Item
-          name="price"
-          label="Price"
-          rules={[{ required: true, message: "Please enter price" }]}
-        >
-          <InputNumber
-            style={{ width: "100%" }}
-            placeholder="Enter price"
-            min={0}
-            step={0.01}
-            precision={2}
-          />
+        <Form.Item name="categoryId" label="Category">
+          <Select
+            allowClear
+            placeholder="Select category"
+            showSearch
+            optionFilterProp="children"
+          >
+            {categories.map((category) => (
+              <Select.Option key={category.id} value={category.id}>
+                {category.name}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
-        <Form.Item
-          name="stock"
-          label="Stock"
-          rules={[{ required: true, message: "Please enter stock" }]}
-        >
-          <InputNumber
-            style={{ width: "100%" }}
-            placeholder="Enter stock"
-            min={0}
-          />
-        </Form.Item>
+        <div style={{ display: "flex", gap: 16 }}>
+          <Form.Item
+            name="price"
+            label="Price"
+            rules={[{ required: true, message: "Please enter price" }]}
+            style={{ flex: 1 }}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="Enter price"
+              min={0}
+              step={0.01}
+              precision={2}
+              prefix="$"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="stock"
+            label="Stock"
+            rules={[{ required: true, message: "Please enter stock" }]}
+            style={{ flex: 1 }}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="Enter stock"
+              min={0}
+            />
+          </Form.Item>
+        </div>
 
         <Form.Item name="description" label="Description">
           <Input.TextArea rows={3} placeholder="Enter description" />
         </Form.Item>
+
+        {isEdit && (
+          <Form.Item name="isActive" label="Active" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   );

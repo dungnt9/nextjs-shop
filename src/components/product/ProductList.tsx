@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Table, Button, Space, Tag, message, Popconfirm } from "antd";
+import { Table, Button, Space, Tag, message, Popconfirm, Select } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { productService } from "@/services/productService";
+import { categoryService } from "@/services/categoryService";
 import ProductModal from "./ProductModal";
-import type { Product } from "@/types";
+import type { Product, Category } from "@/types";
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -26,9 +29,19 @@ export default function ProductList() {
     setLoading(false);
   }, []);
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const data = await categoryService.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
   const handleCreate = () => {
     setEditingProduct(null);
@@ -70,6 +83,19 @@ export default function ProductList() {
       sorter: (a, b) => a.brand.localeCompare(b.brand),
     },
     {
+      title: "Category",
+      dataIndex: "categoryName",
+      key: "categoryName",
+      render: (categoryName: string | null) =>
+        categoryName ? (
+          <Tag color="blue">{categoryName}</Tag>
+        ) : (
+          <Tag>No Category</Tag>
+        ),
+      filters: categories.map((cat) => ({ text: cat.name, value: cat.id })),
+      onFilter: (value, record) => record.categoryId === value,
+    },
+    {
       title: "Price",
       dataIndex: "price",
       key: "price",
@@ -80,6 +106,11 @@ export default function ProductList() {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
+      render: (stock: number) => (
+        <Tag color={stock > 20 ? "green" : stock > 5 ? "orange" : "red"}>
+          {stock}
+        </Tag>
+      ),
       sorter: (a, b) => a.stock - b.stock,
     },
     {
@@ -122,17 +153,42 @@ export default function ProductList() {
     },
   ];
 
+  // Filter products by selected category
+  const filteredProducts = selectedCategory
+    ? products.filter((p) => p.categoryId === selectedCategory)
+    : products;
+
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          gap: 16,
+          alignItems: "center",
+        }}
+      >
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           Add Product
         </Button>
+        <Select
+          allowClear
+          placeholder="Filter by Category"
+          style={{ width: 200 }}
+          value={selectedCategory}
+          onChange={setSelectedCategory}
+        >
+          {categories.map((cat) => (
+            <Select.Option key={cat.id} value={cat.id}>
+              {cat.name}
+            </Select.Option>
+          ))}
+        </Select>
       </div>
 
       <Table
         columns={columns}
-        dataSource={products}
+        dataSource={filteredProducts}
         rowKey="id"
         loading={loading}
         pagination={{
@@ -148,6 +204,7 @@ export default function ProductList() {
         onCancel={() => setModalVisible(false)}
         onSuccess={handleModalSuccess}
         product={editingProduct}
+        categories={categories}
       />
     </div>
   );

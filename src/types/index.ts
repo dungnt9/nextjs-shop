@@ -1,3 +1,23 @@
+// Category types
+export interface Category {
+  id: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryRequest {
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
 // Product types
 export interface Product {
   id: number;
@@ -7,6 +27,8 @@ export interface Product {
   description: string;
   stock: number;
   isActive: boolean;
+  categoryId: number | null;
+  categoryName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +39,7 @@ export interface CreateProductRequest {
   price: number;
   description?: string;
   stock: number;
+  categoryId?: number;
 }
 
 export interface UpdateProductRequest {
@@ -25,6 +48,8 @@ export interface UpdateProductRequest {
   price: number;
   description?: string;
   stock: number;
+  categoryId?: number;
+  isActive: boolean;
 }
 
 // Order types
@@ -34,14 +59,20 @@ export interface Order {
   customerEmail: string;
   productId: number;
   productName: string;
+  productPrice: number;
   quantity: number;
   totalAmount: number;
   status: OrderStatus;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
-export type OrderStatus = "Pending" | "Processing" | "Completed" | "Cancelled";
+export type OrderStatus =
+  | "Pending"
+  | "Processing"
+  | "Shipped"
+  | "Completed"
+  | "Cancelled";
 
 export interface CreateOrderRequest {
   customerName: string;
@@ -55,6 +86,10 @@ export interface UpdateOrderRequest {
   customerEmail: string;
   productId: number;
   quantity: number;
+}
+
+export interface UpdateOrderStatusRequest {
+  status: OrderStatus;
 }
 
 // API Response types
@@ -81,6 +116,8 @@ export interface ProductFormValues {
   price: number;
   description?: string;
   stock: number;
+  categoryId?: number;
+  isActive?: boolean;
 }
 
 export interface OrderFormValues {
@@ -88,4 +125,10 @@ export interface OrderFormValues {
   customerEmail: string;
   productId: number;
   quantity: number;
+}
+
+export interface CategoryFormValues {
+  name: string;
+  description?: string;
+  isActive?: boolean;
 }

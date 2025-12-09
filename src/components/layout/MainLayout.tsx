@@ -6,6 +6,7 @@ import {
   ShoppingOutlined,
   ShopOutlined,
   HomeOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,6 +30,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       key: "/products",
       icon: <ShoppingOutlined />,
       label: <Link href="/products">Products</Link>,
+    },
+    {
+      key: "/categories",
+      icon: <AppstoreOutlined />,
+      label: <Link href="/categories">Categories</Link>,
     },
     {
       key: "/orders",
