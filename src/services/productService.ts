@@ -1,76 +1,149 @@
-import axios from "axios";
+import { apolloClient } from "@/lib/apolloClient";
+import {
+  GET_PRODUCTS,
+  GET_PRODUCT,
+  CREATE_PRODUCT,
+  UPDATE_PRODUCT,
+  DELETE_PRODUCT,
+} from "@/graphql/queries";
+import type {
+  GetProductsResponse,
+  GetProductResponse,
+  CreateProductResponse,
+  UpdateProductResponse,
+} from "@/graphql/types";
 import type {
   Product,
   CreateProductRequest,
   UpdateProductRequest,
 } from "@/types";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_PRODUCT_API_URL ||
-  "http://localhost:6001/api/products";
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 export const productService = {
   /**
-   * Get all products
+   * Get all products using GraphQL
    */
   getAll: async (): Promise<Product[]> => {
-    const response = await apiClient.get<Product[]>("");
-    return response.data;
+    const { data } = await apolloClient.query<GetProductsResponse>({
+      query: GET_PRODUCTS,
+    });
+
+    return data!.products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: p.price,
+      description: p.description,
+      stock: p.stock,
+      isActive: p.isActive,
+      categoryId: p.categoryId,
+      categoryName: p.category?.name || null,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
   },
 
   /**
-   * Get product by ID
+   * Get product by ID using GraphQL
    */
   getById: async (id: number): Promise<Product> => {
-    const response = await apiClient.get<Product>(`/${id}`);
-    return response.data;
+    const { data } = await apolloClient.query<GetProductResponse>({
+      query: GET_PRODUCT,
+      variables: { id },
+    });
+
+    const p = data!.product!;
+    return {
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: p.price,
+      description: p.description,
+      stock: p.stock,
+      isActive: p.isActive,
+      categoryId: p.categoryId,
+      categoryName: p.category?.name || null,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    };
   },
 
   /**
-   * Create a new product
+   * Create a new product using GraphQL mutation
    */
   create: async (data: CreateProductRequest): Promise<Product> => {
-    const payload = {
-      name: data.name,
-      brand: data.brand,
-      price: Number(data.price),
-      description: data.description || "",
-      stock: Number(data.stock),
-      categoryId: data.categoryId || null,
+    const { data: result } = await apolloClient.mutate<CreateProductResponse>({
+      mutation: CREATE_PRODUCT,
+      variables: {
+        input: {
+          name: data.name,
+          brand: data.brand,
+          price: Number(data.price),
+          description: data.description || "",
+          stock: Number(data.stock),
+          categoryId: data.categoryId || 0,
+        },
+      },
+    });
+
+    const p = result!.createProduct;
+    return {
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: p.price,
+      description: p.description,
+      stock: p.stock,
+      isActive: p.isActive,
+      categoryId: p.categoryId,
+      categoryName: p.category?.name || null,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt || null,
     };
-    const response = await apiClient.post<Product>("", payload);
-    return response.data;
   },
 
   /**
-   * Update an existing product
+   * Update an existing product using GraphQL mutation
    */
   update: async (id: number, data: UpdateProductRequest): Promise<Product> => {
-    const payload = {
-      name: data.name,
-      brand: data.brand,
-      price: Number(data.price),
-      description: data.description || "",
-      stock: Number(data.stock),
-      categoryId: data.categoryId || null,
-      isActive: data.isActive,
+    const { data: result } = await apolloClient.mutate<UpdateProductResponse>({
+      mutation: UPDATE_PRODUCT,
+      variables: {
+        input: {
+          id,
+          name: data.name,
+          brand: data.brand,
+          price: Number(data.price),
+          description: data.description || "",
+          stock: Number(data.stock),
+          categoryId: data.categoryId || 0,
+          isActive: data.isActive,
+        },
+      },
+    });
+
+    const p = result!.updateProduct;
+    return {
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: p.price,
+      description: p.description,
+      stock: p.stock,
+      isActive: p.isActive,
+      categoryId: p.categoryId,
+      categoryName: p.category?.name || null,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
     };
-    const response = await apiClient.put<Product>(`/${id}`, payload);
-    return response.data;
   },
 
   /**
-   * Delete a product
+   * Delete a product using GraphQL mutation
    */
   delete: async (id: number): Promise<void> => {
-    await apiClient.delete(`/${id}`);
+    await apolloClient.mutate({
+      mutation: DELETE_PRODUCT,
+      variables: { id },
+    });
   },
 };

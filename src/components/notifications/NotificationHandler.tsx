@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSocket } from "@/contexts/SocketContext";
+import { useSocket, OrderCreatedEventData } from "@/contexts/SocketContext";
 import toast from "react-hot-toast";
-import type { OrderCreatedEvent } from "@/types";
 
 export default function NotificationHandler() {
   const { socket } = useSocket();
@@ -11,7 +10,7 @@ export default function NotificationHandler() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleOrderCreated = (data: OrderCreatedEvent) => {
+    const handleOrderCreated = (data: OrderCreatedEventData) => {
       toast.success(
         `🎉 ${data.message}\nCustomer: ${data.data.customerName}\nProduct: ${data.data.productName}\nAmount: $${data.data.totalAmount}`,
         {

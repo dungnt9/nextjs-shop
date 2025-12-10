@@ -30,7 +30,7 @@ export interface Product {
   categoryId: number | null;
   categoryName: string | null;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 export interface CreateProductRequest {

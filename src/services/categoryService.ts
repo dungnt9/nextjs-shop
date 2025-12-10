@@ -1,73 +1,121 @@
-import axios from "axios";
+import { apolloClient } from "@/lib/apolloClient";
+import {
+  GET_CATEGORIES,
+  GET_CATEGORY,
+  CREATE_CATEGORY,
+  UPDATE_CATEGORY,
+  DELETE_CATEGORY,
+} from "@/graphql/queries";
+import type {
+  GetCategoriesResponse,
+  GetCategoryResponse,
+  CreateCategoryResponse,
+  UpdateCategoryResponse,
+} from "@/graphql/types";
 import type {
   Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@/types";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_PRODUCT_API_URL?.replace(
-    "/products",
-    "/categories"
-  ) || "http://localhost:6001/api/categories";
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
 export const categoryService = {
   /**
-   * Get all categories
+   * Get all categories using GraphQL
    */
   getAll: async (): Promise<Category[]> => {
-    const response = await apiClient.get<Category[]>("");
-    return response.data;
+    const { data } = await apolloClient.query<GetCategoriesResponse>({
+      query: GET_CATEGORIES,
+    });
+
+    return data!.categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      isActive: c.isActive,
+      productCount: c.products?.length || 0,
+      createdAt: c.createdAt,
+    }));
   },
 
   /**
-   * Get category by ID
+   * Get category by ID using GraphQL
    */
   getById: async (id: number): Promise<Category> => {
-    const response = await apiClient.get<Category>(`/${id}`);
-    return response.data;
+    const { data } = await apolloClient.query<GetCategoryResponse>({
+      query: GET_CATEGORY,
+      variables: { id },
+    });
+
+    const c = data!.category!;
+    return {
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      isActive: c.isActive,
+      createdAt: c.createdAt,
+    };
   },
 
   /**
-   * Create a new category
+   * Create a new category using GraphQL mutation
    */
   create: async (data: CreateCategoryRequest): Promise<Category> => {
-    const payload = {
-      name: data.name,
-      description: data.description || "",
+    const { data: result } = await apolloClient.mutate<CreateCategoryResponse>({
+      mutation: CREATE_CATEGORY,
+      variables: {
+        input: {
+          name: data.name,
+          description: data.description || "",
+        },
+      },
+    });
+
+    const c = result!.createCategory;
+    return {
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      isActive: c.isActive,
+      createdAt: c.createdAt,
     };
-    const response = await apiClient.post<Category>("", payload);
-    return response.data;
   },
 
   /**
-   * Update an existing category
+   * Update an existing category using GraphQL mutation
    */
   update: async (
     id: number,
     data: UpdateCategoryRequest
   ): Promise<Category> => {
-    const payload = {
-      name: data.name,
-      description: data.description || "",
-      isActive: data.isActive,
+    const { data: result } = await apolloClient.mutate<UpdateCategoryResponse>({
+      mutation: UPDATE_CATEGORY,
+      variables: {
+        input: {
+          id,
+          name: data.name,
+          description: data.description || "",
+          isActive: data.isActive,
+        },
+      },
+    });
+
+    const c = result!.updateCategory;
+    return {
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      isActive: c.isActive,
+      createdAt: c.createdAt,
     };
-    const response = await apiClient.put<Category>(`/${id}`, payload);
-    return response.data;
   },
 
   /**
-   * Delete a category
+   * Delete a category using GraphQL mutation
    */
   delete: async (id: number): Promise<void> => {
-    await apiClient.delete(`/${id}`);
+    await apolloClient.mutate({
+      mutation: DELETE_CATEGORY,
+      variables: { id },
+    });
   },
 };

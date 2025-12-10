@@ -7,10 +7,23 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
+
+// Define socket event data type
+export interface OrderCreatedEventData {
+  message: string;
+  data: {
+    customerName: string;
+    productName: string;
+    totalAmount: number;
+  };
+}
+
+// Use ReturnType to get the correct socket type
+type SocketInstance = ReturnType<typeof io>;
 
 interface SocketContextType {
-  socket: Socket | null;
+  socket: SocketInstance | null;
   isConnected: boolean;
 }
 
@@ -29,7 +42,7 @@ interface SocketProviderProps {
 }
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<SocketInstance | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
